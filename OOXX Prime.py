@@ -46,17 +46,17 @@ class Agent():
 
 # 写一个函数判断输赢
 # 这里我们直接用暴力枚举判断输赢就行了，因为状态空间就这么简单
-def Judge(Outcome,OOXX_Index): # 输入为状态和对应的玩家
-    Triple = np.repeat(OOXX_Index,3)
+def Judge(Outcome, curPlayer): # 输入为状态和对应的玩家
+    Triple = np.repeat(curPlayer.index,3)
     winner = 0  # 默认胜负未分
     if 0 not in Outcome: # 没地方下了
         winner = 3 # 平局
     if (Outcome[0:3]==Triple).all() or (Outcome[3:6]==Triple).all() or (Outcome[6:9]==Triple).all(): # 分别判断三行
-        winner = OOXX_Index
+        winner = curPlayer.index
     if (Outcome[0:7:3]==Triple).all() or (Outcome[1:8:3]==Triple).all() or (Outcome[2:9:3]==Triple).all(): # 分别判断三列
-        winner = OOXX_Index
+        winner = curPlayer.index
     if (Outcome[0:9:4]==Triple).all() or (Outcome[2:7:2]==Triple).all(): # 分别判断两条对角线
-        winner = OOXX_Index
+        winner = curPlayer.index
     return winner # 返回玩家是否胜利
 
 # 创建两个 Agent
@@ -77,18 +77,18 @@ for i in range(Trial):
     State = np.zeros(9).astype(np.int8) # 初始化棋盘
     # 我们默认 Agent1 先行
     # 并且以 Agent1 的视角定义 State 和 Outcome
+    curPlayer = Agent1
+    opponentPlayer = Agent2
     while winner == 0: #如果胜负未分
-        Outcome = Agent1.move(State) # Agent1 采取行动，并且更新价值
-        winner = Judge(Outcome,1) # 判断 Agent1 是否获胜
-        if winner == 1: # 如果 Agent1 获胜
-            Agent1.value[tuple(Outcome)] = 1 # Outcome 的价值对 Agent1 来说为 1
-            Agent2.value[tuple(State)] = -1 # Agent2 对应的后果，也就是 Agent1 面临的 State 的价值对 Agent2 来说为 -1
-        elif winner == 0: #如果胜负未分
-            State = Agent2.move(Outcome) # Agent2 采取行动，并且更新价值
-            winner = Judge(State,2) # 判断 Agent2 是否获胜
-            if winner == 2: # 如果 Agent2 获胜
-                Agent2.value[tuple(State)]=1  # Agent2 对应的后果，也就是 Agent1 面临的 State 的价值对 Agent2 来说为 1
-                Agent1.value[tuple(Outcome)]=-1 # Outcome 的价值对 Agent1 来说为 -1
+        Outcome = curPlayer.move(State) # 当前 Agent 采取行动，并且更新价值
+        winner = Judge(Outcome,curPlayer) # 判断当前 Agent 是否获胜
+        if winner == curPlayer.index: # 如果当前 Agent 获胜
+            curPlayer.value[tuple(Outcome)] = 1 # Outcome 的价值对当前 Agent 来说为 1
+            opponentPlayer.value[tuple(State)] = -1 # 对手Agent 对应的后果，也就是当前 Agent 面临的 State 的价值对 对方 Agent来说为 -1
+            
+        curPlayer, opponentPlayer = opponentPlayer, curPlayer # 下一轮对手下棋，交换角色
+        State = Outcome # 更新下一轮棋盘状态
+        
     Winner[i] = winner # 记录结果
 
 
@@ -120,3 +120,4 @@ plt.ylabel("Winning Rate",fontsize=30)
 plt.legend(loc="best",fontsize=25)
 plt.tick_params(width=4,length=10)
 ax.spines[:].set_linewidth(4)
+plt.savefig('ooxx_prime_plot.png', dpi=300, bbox_inches='tight')
